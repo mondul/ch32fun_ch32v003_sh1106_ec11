@@ -10,7 +10,7 @@
  */
 #include "ch32fun.h"
 #include <stdio.h>
-#include <sh1106.h>
+#include "my_txt.h"
 
 // -------------------------------------------------------------------------------------------------
 
@@ -37,6 +37,20 @@ void update_jiggle(int8_t delta)
 }
 
 // -------------------------------------------------------------------------------------------------
+// ISRs
+
+// -----------------------------------------------
+// PA0 change interrupt service routine
+void EXTI0_IRQHandler(void) __attribute__((interrupt));
+void EXTI0_IRQHandler(void)
+{
+  // Clear flag (reference manual says write 1 to clear it)
+  EXTI->INTFR |= EXTI_INTF_INTF0;
+
+  funDigitalWrite(PB2, funDigitalRead(PB2) ? FUN_LOW : FUN_HIGH);
+}
+
+// -------------------------------------------------------------------------------------------------
 
 int main()
 {
@@ -46,6 +60,17 @@ int main()
   funPinMode( PA0, GPIO_CFGLR_IN_PUPD ); // Set PA0 to input (board's KEY pushbutton)
   funPinMode( PA6, GPIO_CFGLR_IN_FLOAT ); // Set PA6 to floating input
   funPinMode( PA7, GPIO_CFGLR_IN_FLOAT ); // Set PA7 to floating input
+
+  funPinMode( PB2, GPIO_CFGLR_OUT_10Mhz_PP ); // Set PB2 to output
+  funPinMode( PB12, GPIO_CFGLR_OUT_10Mhz_PP ); // Set PB12 to output
+
+  // Relay is active low
+  funDigitalWrite(PB12, FUN_HIGH);
+
+  // Enable PA0 change interrupt on rising edge
+  EXTI->INTENR |= EXTI_INTENR_MR0;
+  EXTI->RTENR |= EXTI_RTENR_TR0;
+  NVIC_EnableIRQ(EXTI0_IRQn);
 
   // Enable TIM3
   RCC->APB1PCENR |= RCC_APB1Periph_TIM3;
@@ -72,6 +97,12 @@ int main()
 
   // uint16_t initial_count = TIM3->CNT;
   uint16_t last_count = TIM3->CNT;
+
+  my_txt(0, 0, "Hello");
+  my_txt(0, 1, "World!");
+  my_txt(0, 2, "_{y}_");
+  my_txt(0, 3, "Lorem ipsum");
+  sh1106_refresh();
 
   for (;;)
   {
