@@ -93,22 +93,23 @@ int main()
 
   sh1106_init();
 
-  update_jiggle(0);
+  sh1106_clrbuf();
 
   // uint16_t initial_count = TIM3->CNT;
   uint16_t last_count = TIM3->CNT;
 
   my_txt(0, 0, "Hello");
-  my_txt(0, 1, "World!");
-  my_txt(0, 2, "_{y}_");
-  my_txt(0, 3, "Lorem ipsum");
+  my_txt(0, 16, "World!");
+  my_txt(0, 32, "_{y}_");
+  my_txt(0, 48, "Lorem ipsum");
   sh1106_refresh();
 
   for (;;)
   {
     Delay_Ms(50);
     uint16_t count = TIM3->CNT;
-    if( count != last_count) {
+    if( count != last_count)
+    {
       update_jiggle(count - last_count);
       /*
       printf(

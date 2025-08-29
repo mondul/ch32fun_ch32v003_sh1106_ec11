@@ -62,10 +62,19 @@ void sh1106_clrbuf(void)
   memset(sh1106_buffer, 0, sizeof(sh1106_buffer));
 }
 
+// Set pixel
+void sh1106_set_pixel(uint8_t x, uint8_t y)
+{
+  if (x >= SH1106_WIDTH || y >= SH1106_HEIGHT) return;
+
+  uint8_t *ptr = sh1106_buffer + x + (SH1106_WIDTH * (y >> 3));
+  *ptr |= (1 << (y % 8));
+}
+
 // Send the frame buffer
 void sh1106_refresh(void)
 {
-  uint8_t *buf = sh1106_buffer;
+  uint8_t *ptr = sh1106_buffer;
   for (uint8_t page = 0; page < (SH1106_HEIGHT / 8); page++)
 	{
 		sh1106_cmd(0xB0 | page); // SH1103_SETPAGEADDR
@@ -75,8 +84,8 @@ void sh1106_refresh(void)
 
     for (uint8_t i = 0; i < (SH1106_WIDTH / SH1106_MAXBUF); i++)
     {
-      ssd1306_pkt_send(buf, SH1106_MAXBUF, 0);
-      buf += SH1106_MAXBUF;
+      ssd1306_pkt_send(ptr, SH1106_MAXBUF, 0);
+      ptr += SH1106_MAXBUF;
     }
 	}
 }
