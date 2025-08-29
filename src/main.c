@@ -98,10 +98,16 @@ int main()
   // uint16_t initial_count = TIM3->CNT;
   uint16_t last_count = TIM3->CNT;
 
-  my_txt(0, 0, "Hello");
-  my_txt(0, 16, "World!");
-  my_txt(0, 32, "_{y}_");
-  my_txt(0, 48, "Lorem ipsum");
+  uint8_t y = 2;
+  my_txt(0, y, "Hello");
+  y += char_rows;
+  my_txt(0, y, "World!");
+  y += char_rows;
+  my_txt(0, y, "_{y}_ fj yy");
+  y += char_rows;
+  my_txt(0, y, "Lorem ipsum");
+  y += char_rows;
+  my_txt(0, y, "dolor sit amet");
   sh1106_refresh();
 
   for (;;)
