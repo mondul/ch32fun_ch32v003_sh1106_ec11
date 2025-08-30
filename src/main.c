@@ -10,7 +10,7 @@
  */
 #include "ch32fun.h"
 #include <stdio.h>
-#include "my_txt.h"
+#include "tiny_talk_font.h"
 
 // -------------------------------------------------------------------------------------------------
 
@@ -98,16 +98,22 @@ int main()
   // uint16_t initial_count = TIM3->CNT;
   uint16_t last_count = TIM3->CNT;
 
-  uint8_t y = 2;
+  my_set_font(&tiny_talk_font);
+  my_txt(80, 0, "May 26");
+  my_txt(111, 0, "12:43");
+
+  my_set_font(NULL); // Set default font
+  uint8_t y = 4;
   my_txt(0, y, "Hello");
-  y += char_rows;
+  y += my_font->char_rows;
   my_txt(0, y, "World!");
-  y += char_rows;
+  y += my_font->char_rows;
   my_txt(0, y, "_{y}_ fj yy");
-  y += char_rows;
+  y += my_font->char_rows;
   my_txt(0, y, "Lorem ipsum");
-  y += char_rows;
+  y += my_font->char_rows;
   my_txt(0, y, "dolor sit amet");
+
   sh1106_refresh();
 
   for (;;)

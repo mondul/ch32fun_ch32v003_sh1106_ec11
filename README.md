@@ -4,6 +4,11 @@ PlatformIO project with the [ch32fun](https://github.com/cnlohr/ch32fun) develop
 
 This example shows triangle waves in a SH1106 based 1.3 in 128×64 OLED display connected via I<sup>2</sup>C. Waves are horizontally scrolled according to a EC11 encoder's rotation direction.
 
+Fonts included are in the Adafruit GFX format. You can convert a ttf file to this format using [this web page](https://fontconvert.huyzona.com). The fonts used in this project are:
+
+* [Tiny Talk by Vexed](https://v3x3d.itch.io/tiny-talk)
+* [Ithaca by GGBotNet](https://ggbot.itch.io/ithaca-font)
+
 ### Used parts links:
 
 * [BluePill+ CH32V203C8T6](https://www.aliexpress.com/item/1005006117720765.html)
