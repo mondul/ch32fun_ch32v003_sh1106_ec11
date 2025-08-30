@@ -56,6 +56,7 @@ uint8_t sh1106_cmd(uint8_t cmd)
 {
 	return ssd1306_pkt_send(&cmd, 1, 1);
 }
+
 // Clear the screen buffer
 void sh1106_clrbuf(void)
 {
@@ -67,8 +68,25 @@ void sh1106_set_pixel(uint8_t x, uint8_t y)
 {
   if (x >= SH1106_WIDTH || y >= SH1106_HEIGHT) return;
 
-  uint8_t *ptr = sh1106_buffer + x + (SH1106_WIDTH * (y >> 3));
-  *ptr |= (1 << (y % 8));
+  sh1106_buffer[x + (SH1106_WIDTH * (y >> 3))] |= (1 << (y % 8));
+}
+
+// Invert colors inside a selection rectangle
+void sh1106_xor_rect(uint8_t start_x, uint8_t start_y, uint8_t end_x, uint8_t end_y)
+{
+  if (start_x > end_x) { uint8_t tmp = start_x; start_x = end_x; end_x = tmp; }
+  if (start_y > end_y) { uint8_t tmp = start_y; start_y = end_y; end_y = tmp; }
+
+  for (uint8_t y = start_y; y <= end_y && y < SH1106_HEIGHT; y++)
+  {
+    uint16_t offset = SH1106_WIDTH * (y >> 3);
+    uint8_t bit_mask = (1 << (y % 8));
+
+    for (uint8_t x = start_x; x <= end_x && x < SH1106_WIDTH; x++)
+    {
+      sh1106_buffer[offset + x] ^= bit_mask;
+    }
+  }
 }
 
 // Send the frame buffer

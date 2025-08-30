@@ -2,7 +2,7 @@
 
 PlatformIO project with the [ch32fun](https://github.com/cnlohr/ch32fun) development environment. A [WCH LinkE](https://www.aliexpress.com/item/1005004881582037.html) debugger/programmer is preferred for uploading code to the microcontroller.
 
-This example shows triangle waves in a SH1106 based 1.3 in 128×64 OLED display connected via I<sup>2</sup>C. Waves are horizontally scrolled according to a EC11 encoder's rotation direction.
+This example shows a list of menu options in a SH1106 based 1.3 in 128×64 OLED display connected via I<sup>2</sup>C. Options are selected according to a EC11 encoder's rotation direction.
 
 Fonts included are in the Adafruit GFX format. You can convert a ttf file to this format using [this web page](https://fontconvert.huyzona.com). The fonts used in this project are:
 

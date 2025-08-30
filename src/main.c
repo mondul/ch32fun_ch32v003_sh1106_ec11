@@ -10,34 +10,14 @@
  */
 #include "ch32fun.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "tiny_talk_font.h"
 
 // -------------------------------------------------------------------------------------------------
-
-uint8_t jiggle[] = { // /\/
-  0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
-  0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01,
-  0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
-  0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01,
-};
-uint8_t *jigglepos = jiggle;
-const uint8_t *endjiggle = jiggle + 16;
-
-void update_jiggle(int8_t delta)
-{
-  jigglepos += delta;
-
-  if (jigglepos < jiggle) jigglepos = (uint8_t*)endjiggle + delta;
-  else if (jigglepos >= endjiggle) jigglepos -= 16;
-
-  for (uint8_t i = 0; i < (sizeof(sh1106_buffer) / 16); i++)
-    memcpy(sh1106_buffer + (i * 16), jigglepos, 16);
-
-  sh1106_refresh();
-}
-
-// -------------------------------------------------------------------------------------------------
 // ISRs
+
+// Display refresh flag
+volatile uint8_t refresh = 0;
 
 // -----------------------------------------------
 // PA0 change interrupt service routine
@@ -48,6 +28,33 @@ void EXTI0_IRQHandler(void)
   EXTI->INTFR |= EXTI_INTF_INTF0;
 
   funDigitalWrite(PB2, funDigitalRead(PB2) ? FUN_LOW : FUN_HIGH);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void show_menu(uint8_t selected_option)
+{
+  sh1106_clrbuf();
+
+  my_set_font(&tiny_talk_font);
+  my_txt(80, 0, "May 26");
+  my_txt(111, 0, "12:43");
+
+  my_set_font(NULL); // Set default font
+  uint8_t y = 4;
+  my_txt(1, y, "Hello");
+  y += my_font->char_rows;
+  my_txt(1, y, "World!");
+  y += my_font->char_rows;
+  my_txt(1, y, "_{y}_ fj yy");
+  y += my_font->char_rows;
+  my_txt(1, y, "Lorem ipsum");
+  y += my_font->char_rows;
+  my_txt(1, y, "dolor sit amet");
+
+  uint8_t start_y = 4 + (selected_option * my_font->char_rows);
+
+  sh1106_xor_rect(0, start_y, (SH1106_WIDTH - 1), start_y + my_font->char_rows);
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -72,12 +79,17 @@ int main()
   EXTI->RTENR |= EXTI_RTENR_TR0;
   NVIC_EnableIRQ(EXTI0_IRQn);
 
+  // Capture module stuff for the encoder
+
   // Enable TIM3
   RCC->APB1PCENR |= RCC_APB1Periph_TIM3;
 
   // Reset TIM3 to init all regs
   RCC->APB1PRSTR |= RCC_APB1Periph_TIM3;
   RCC->APB1PRSTR &= ~RCC_APB1Periph_TIM3;
+
+  // set TIM3 clock prescaler If you want to reduce the resolution of the encoder
+  // TIM3->PSC = 0;
 
   // SMCFGR: set encoder mode SMS=011b
   TIM3->SMCFGR |= TIM_EncoderMode_TI12;
@@ -91,47 +103,45 @@ int main()
   // Enable TIM3
   TIM3->CTLR1 |= TIM_CEN;
 
-  sh1106_init();
-
-  sh1106_clrbuf();
-
-  // uint16_t initial_count = TIM3->CNT;
   uint16_t last_count = TIM3->CNT;
 
-  my_set_font(&tiny_talk_font);
-  my_txt(80, 0, "May 26");
-  my_txt(111, 0, "12:43");
+  // OLED stuff
 
-  my_set_font(NULL); // Set default font
-  uint8_t y = 4;
-  my_txt(0, y, "Hello");
-  y += my_font->char_rows;
-  my_txt(0, y, "World!");
-  y += my_font->char_rows;
-  my_txt(0, y, "_{y}_ fj yy");
-  y += my_font->char_rows;
-  my_txt(0, y, "Lorem ipsum");
-  y += my_font->char_rows;
-  my_txt(0, y, "dolor sit amet");
+  int8_t menu_pos = 0;
 
+  sh1106_init();
+  show_menu(menu_pos);
   sh1106_refresh();
 
   for (;;)
   {
     Delay_Ms(50);
     uint16_t count = TIM3->CNT;
-    if( count != last_count)
+    if (count != last_count)
     {
-      update_jiggle(count - last_count);
-      /*
-      printf(
-        "Position relative=%ld absolute=%u delta=%ld\n",
-        (int32_t)count - initial_count,
-        count,
-        (int32_t)count-last_count
-      );
-      */
-      last_count = count;
+      int16_t delta = count - last_count;
+      if (abs(delta) > 3) // Debounce filter
+      {
+        if (delta > 0)
+        {
+          menu_pos++;
+          if (menu_pos == 5) menu_pos = 0;
+        }
+        else
+        {
+          menu_pos--;
+          if (menu_pos == -1) menu_pos = 4;
+        }
+        show_menu(menu_pos);
+        refresh = 1;
+        last_count = count;
+      }
+    }
+
+    if (refresh)
+    {
+      sh1106_refresh();
+      refresh = 0;
     }
   }
 }
